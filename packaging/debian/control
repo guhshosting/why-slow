@@ -1,0 +1,14 @@
+Source: why-slow
+Section: utils
+Priority: optional
+Maintainer: guhshosting
+Build-Depends: debhelper-compat (= 13), cmake (>= 3.16), g++, python3
+Standards-Version: 4.6.2
+Rules-Requires-Root: no
+
+Package: why-slow
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: read-only Linux performance observations
+ Collect local performance observations and explain possible resource pressure
+ without unsupported causal claims, telemetry or automatic configuration changes.

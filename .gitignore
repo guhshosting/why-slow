@@ -1,0 +1,14 @@
+/build*/
+/_CPack_Packages/
+*.o
+*.a
+*.so
+*.deb
+*.rpm
+*.tar.gz
+*.log
+*.1.gz
+__pycache__/
+CMakeCache.txt
+CMakeFiles/
+compile_commands.json

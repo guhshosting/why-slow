@@ -1,0 +1,135 @@
+.TH WHY-SLOW 1 "September 2026" "why-slow 1.0.0" "User Commands"
+.SH NAME
+why-slow \- read-only Linux performance observations and cautious explanations
+.SH SYNOPSIS
+.B why-slow
+.RI [ snapshot | sample | processes | summary ]
+.RI [ options ]
+.SH DESCRIPTION
+.B why-slow
+collects selected local Linux performance observations without changing system
+configuration. It distinguishes observations, indicators, context, unavailable
+data and insufficient evidence. Correlation does not establish causation.
+No telemetry, network access, automatic optimization or persistent report writing
+is performed. Ordinary users can collect whatever the kernel permits them to read.
+.SH MODES
+.TP
+.B snapshot
+One reading. Gauges and cumulative counters are available; CPU percentages and
+counter rates require a second reading and are not invented from boot totals.
+.TP
+.B sample
+Three readings by default, with rates between adjacent readings.
+.TP
+.B processes
+Two readings by default. Includes the same findings plus process rankings.
+.TP
+.B summary
+Two readings by default, using the same evidence and finding model.
+.SH OPTIONS
+.TP
+.BI "--format " format
+text (default), json or markdown. JSON stdout is one complete document with a
+samples array. Raw integer counters are decimal strings to preserve precision.
+Diagnostics go to stderr.
+.TP
+.BI "--interval " seconds
+Requested sampling interval, 0.05 through 60; default 1. Actual monotonic elapsed
+time is used for rates. Short intervals amplify accounting and collection skew.
+.TP
+.BI "--samples " count
+Total readings, including the baseline; 2 through 1000. Mutually exclusive with
+.BR --duration .
+.TP
+.BI "--duration " seconds
+Observe for up to one hour, with a final reading at or after the requested endpoint.
+At most 1000 readings are allowed; increase the interval for long sessions.
+Collection time and scheduler delay can extend wall time. This and other sampling
+options require a sampling mode.
+.TP
+.BI "--timeout " seconds
+Deadline per entire collection, 0.1 through 30 seconds; default 5. A timed-out
+collector yields unavailable data, not zero values.
+.TP
+.BI "--top " count
+Process rows in text/Markdown, 1 through 100; default 10. Rankings use sampled
+CPU when available, otherwise RSS. JSON retains all collected process records.
+.TP
+.B --explain
+Include selected raw observations and derived metrics in text/Markdown.
+JSON always includes these values.
+.TP
+.BI "--fixture-root " directory
+Read fixture proc and sys subdirectories. Fixture paths cannot contain symlinks.
+Filesystem capacity is read from explicit fixture files; host mount paths are
+not queried. Intended for reproducible tests.
+.TP
+.B --help
+Show usage.
+.TP
+.B --version
+Show version 1.0.0.
+.SH INTERPRETATION
+CPU execution percentages use deltas, exclude idle, iowait and steal from busy,
+and do not double-count guest time. High load is not CPU percentage: load includes
+runnable and certain uninterruptible entities. Iowait is not proof of disk latency.
+.PP
+MemAvailable is preferred to MemFree. Linux uses memory for caches. Swap occupancy
+alone does not show active swapping; sampled swap traffic and memory PSI are
+separate observations. Positive I/O counters do not demonstrate contention.
+.PP
+PSI measures resource-stalled time. Its averages are rolling history, not a
+snapshot interval. Cgroup/namespace scope can differ from physical host scope.
+CPU quota equivalents are shared upper bounds, not dedicated CPUs.
+.PP
+Filesystem capacity is distinct from latency and contention. Per-device I/O is
+never totaled across potentially stacked devices. High temperature or reduced
+frequency does not establish thermal throttling; only appropriate counter
+increments support that observation. A top-ranked process is not blamed for the
+user's slowdown. No combined health score is assigned.
+.SH PRIVACY
+Hostnames, usernames, network addresses, machine IDs, serial numbers, filesystem
+UUIDs, mount paths, full command lines and environments are not reported.
+Process names, PIDs and workload counters remain potentially identifying; review
+reports before sharing. Untrusted terminal controls are sanitized.
+.SH SIGNALS
+SIGINT and SIGTERM end sampling and finish JSON where output remains writable.
+Collection can take the remaining timeout plus up to 200 ms of child cleanup.
+The supervisor may terminate only its own disposable collector on timeout; it
+never signals analyzed processes. An uninterruptible kernel task cannot be
+forced to exit immediately. A broken output pipe is handled without a crash dump.
+.SH EXIT STATUS
+.TP
+.B 0
+At least one reading had CPU, memory or process core data. Not a health verdict.
+.TP
+.B 1
+A collector failed (sampling stops), or all readings lacked core data.
+.TP
+.B 2
+Invalid command line.
+.TP
+.B 3
+Output or internal failure; the output document may be incomplete.
+.TP
+.B 130, 143
+Interrupted by SIGINT or SIGTERM, respectively.
+.TP
+.B 141
+Broken stdout pipe.
+.SH EXAMPLES
+.nf
+why-slow snapshot
+why-slow sample --interval 1 --samples 6
+why-slow sample --duration 30 --interval 2 --format json
+why-slow processes --interval 2 --top 15
+why-slow summary --format markdown
+.fi
+.SH LIMITATIONS
+Reads are non-atomic. Missing kernel features, permissions and container scope
+limit coverage. Threads are not separately scanned. Cgroup v1 is not interpreted.
+Application locks, network latency, transient stalls between samples and physical
+hardware behavior may not be diagnosed. No causal proof of slowness is promised.
+.SH SEE ALSO
+.BR proc (5),
+.BR statvfs (3)
